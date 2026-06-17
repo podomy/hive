@@ -1,10 +1,6 @@
-# Go build/test artifacts
-*.test
-coverage.out
-*.prof
-
-# Local binaries
-/bin
+# OCaml/dune build artifacts
+/_build
+*.install
 
 # OS/editor noise
 .DS_Store

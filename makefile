@@ -1,24 +1,19 @@
-.PHONY: fmt lint test tidy verify
+.PHONY: fmt lint test verify
 
 fmt:
 ifdef ZED_FORMAT_FILE
 	cat > "$(ZED_FORMAT_FILE)"
-	golangci-lint fmt ./... >/dev/null
-	golangci-lint run --fix --enable-only=goheader --issues-exit-code=0 ./... >/dev/null
+	dune fmt >/dev/null
 	cat "$(ZED_FORMAT_FILE)"
 else
-	golangci-lint fmt ./...
-	golangci-lint run --fix --enable-only=goheader --issues-exit-code=0 ./...
+	dune fmt
 endif
 
 lint:
-	golangci-lint run ./...
+	dune build @all
 
 test:
-	go test ./...
+	dune runtest
 
-tidy:
-	go mod tidy
-
-verify: tidy fmt lint test
+verify: fmt lint test
 	git diff --exit-code
