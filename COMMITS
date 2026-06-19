@@ -1,0 +1,37 @@
+                              COMMITS
+
+Use concise commit messages that describe one logical change.
+
+Format:
+
+  type(scope): summary
+
+Types:
+
+  feat    A user-facing feature or new capability
+  fix     A bug fix
+  chore   Maintenance, cleanup, tooling, or structure changes
+  docs    Documentation-only changes
+  test    Test-only changes
+  refactor Code restructuring without behavior changes
+
+Scope:
+
+  Use a short lowercase area name, such as ocaml, go, zed, docs,
+  boilerplate, tests, or build.
+
+Summary:
+
+  Write in the imperative mood.
+  Keep it short and specific.
+  Do not end with a period.
+
+Examples:
+
+  feat(ocaml): add dune project scaffold
+  chore(ocaml): update editor tooling
+  chore(go): remove go scaffold
+  docs(commits): document commit message format
+
+Prefer small commits. If a change includes unrelated work, split it into
+separate commits.
