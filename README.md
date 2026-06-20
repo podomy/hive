@@ -9,9 +9,9 @@ operating from local knowledge, and when segments meet again their state
 is reconciled by explicit rules instead of a hidden central truth.
 
 Formal verification:
-- The full system design is modeled and formally verified.
-- Selected critical implementation paths are fully verified at the code
-  level.
+- The design of important system parts is fully formally verified.
+- Selected critical implementation paths are formally verified at the
+  code level.
 
 Hive is not standard Kubernetes. It may support Kubernetes-like
 deployment workflows, but it does not promise a coherent cluster
