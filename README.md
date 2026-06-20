@@ -1,6 +1,4 @@
-<p align="center">
-  <img src="assets/logo-qxvtrm.png" width="300" alt="Hive Logo">
-</p>
+# Hive
 
 Hive is a runtime and control layer for running software across machine
 fleets in environments with poor connectivity and conditions that degrade
