@@ -1,13 +1,23 @@
-# Hive
+<p align="center">
+  <img src="assets/hive.png" width="300" alt="Hive Logo">
+</p>
 
-Hive is a runtime and control layer for running software across machines
-in environments with poor connectivity and conditions that degrade
+Hive is a runtime and control layer for running software across machine
+fleets in environments with poor connectivity and conditions that degrade
 electronics and communication, such as space, remote terrain,
-underground sites, or the sea.
+underground sites, or the sea. Hive is built for clusters that segment,
+keep operating locally, and meet again later.
 
-It is designed for mathematical consistency. Each segment can keep
+Hive is designed for mathematical consistency. Each segment can keep
 operating from local knowledge, and when segments meet again their state
 is reconciled by explicit rules instead of a hidden central truth.
+
+## What Hive Is For
+
+- Machine fleets that cannot depend on continuous connectivity
+- Remote systems where communication degrades or disappears
+- Software that must keep running during cluster segmentation
+- Operators who need local operation and later reconciliation
 
 ## Formal Verification
 
@@ -22,7 +32,17 @@ If your software needs one live global truth, Hive is the wrong place to
 run it. Cluster segmentation is expected. Local operation and later
 reconciliation are part of the model.
 
+## Documentation
+
+- [Commit message format](./COMMITS)
+- [Contributor license agreement](./CLA)
+
 ## Supported IDEs
 
 We support [Zed](https://zed.dev/). We do not support any other IDEs at
 the moment.
+
+## License
+
+Hive is distributed under the GNU Affero General Public License v3.0 or
+later. See [LICENSE](./LICENSE).
