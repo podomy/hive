@@ -3,11 +3,25 @@
 
 package main
 
-import "fmt"
+import (
+	"log"
+
+	"go.uber.org/zap"
+
+	"github.com/podomy/hive/src/logs"
+)
 
 func main() {
-	_, err := fmt.Println("Hello!")
+	logger, syncLogs, err := logs.Init()
 	if err != nil {
-		panic(err)
+		// logger has not been initialized here; this is the only case where log is acceptable.
+		log.Fatal(err)
 	}
+	defer func() {
+		if err := syncLogs(); err != nil {
+			logger.Warn("log sync failed", zap.Error(err))
+		}
+	}()
+
+	logger.Info("node runtime started")
 }
