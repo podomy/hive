@@ -48,15 +48,22 @@ func run(ctx context.Context, logger *zap.Logger) error {
 		return fmt.Errorf("load node config: %w", err)
 	}
 
-	_, journalStore, cleanup, err := openStores(logger)
+	st, err := openStores()
 	if err != nil {
 		return err
 	}
-	defer cleanup()
+	defer func() {
+		if err := st.kv.Close(); err != nil {
+			logger.Error("close kv store", zap.Error(err))
+		}
+		if err := st.journal.Close(); err != nil {
+			logger.Error("close journal", zap.Error(err))
+		}
+	}()
 
 	// Create a startup event and persist it to the journal before announcing readiness.
 	event := journal.NewEvent(nodeConfig.ID, "node.started", json.RawMessage(`{}`))
-	if err := journalStore.Append(ctx, event); err != nil {
+	if err := st.journal.Append(ctx, event); err != nil {
 		return fmt.Errorf("append startup event: %w", err)
 	}
 	logger.Info("node runtime started",
@@ -71,29 +78,25 @@ func run(ctx context.Context, logger *zap.Logger) error {
 	return nil
 }
 
+type stores struct {
+	kv      *bbolt.KVStore
+	journal *journal.JSONL
+}
+
 // openStores initialises the bbolt key-value store and the JSONL journal.
-func openStores(logger *zap.Logger) (*bbolt.KVStore, *journal.JSONL, func(), error) {
+func openStores() (*stores, error) {
 	kvStore, err := bbolt.Open()
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("load kv store: %w", err)
+		return nil, fmt.Errorf("load kv store: %w", err)
 	}
 
 	journalStore, err := journal.OpenJSONL()
 	if err != nil {
 		if closeErr := kvStore.Close(); closeErr != nil {
-			return nil, nil, nil, fmt.Errorf("open journal: %w; close kv store: %w", err, closeErr)
+			return nil, fmt.Errorf("open journal: %w; close kv store: %w", err, closeErr)
 		}
-		return nil, nil, nil, fmt.Errorf("open journal: %w", err)
+		return nil, fmt.Errorf("open journal: %w", err)
 	}
 
-	cleanup := func() {
-		if err := kvStore.Close(); err != nil {
-			logger.Error("close kv store", zap.Error(err))
-		}
-		if err := journalStore.Close(); err != nil {
-			logger.Error("close journal", zap.Error(err))
-		}
-	}
-
-	return kvStore, journalStore, cleanup, nil
+	return &stores{kv: kvStore, journal: journalStore}, nil
 }
