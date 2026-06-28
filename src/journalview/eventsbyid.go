@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/google/uuid"
 	bolt "go.etcd.io/bbolt"
 	berrors "go.etcd.io/bbolt/errors"
 
@@ -48,10 +49,8 @@ func (e *EventsByID) putEvent(b *bolt.Bucket, event journal.Event) error {
 
 //nolint:dupl // Projection methods intentionally keep bucket-specific logic local.
 func (e *EventsByID) Apply(ctx context.Context, event journal.Event) error {
-	select {
-	case <-ctx.Done():
-		return fmt.Errorf("context cancelation: %w", ctx.Err())
-	default:
+	if err := checkContext(ctx, "context cancelation"); err != nil {
+		return err
 	}
 
 	kv := e.kvStore.DB()
@@ -100,8 +99,8 @@ func (e *EventsByID) replayEvents(ctx context.Context, jr journalreader.Reader, 
 }
 
 func readEvent(ctx context.Context, jr journalreader.Reader) (*journal.Event, error) {
-	if err := ctx.Err(); err != nil {
-		return nil, fmt.Errorf("context cancelation during rebuild: %w", err)
+	if err := checkContext(ctx, "context cancelation during rebuild"); err != nil {
+		return nil, err
 	}
 
 	event, err := jr.Read(ctx)
@@ -117,10 +116,8 @@ func readEvent(ctx context.Context, jr journalreader.Reader) (*journal.Event, er
 
 //nolint:dupl // Projection methods intentionally keep rebuild flow local to each view.
 func (e *EventsByID) Rebuild(ctx context.Context, jr journalreader.Reader) error {
-	select {
-	case <-ctx.Done():
-		return fmt.Errorf("context cancelation: %w", ctx.Err())
-	default:
+	if err := checkContext(ctx, "context cancelation"); err != nil {
+		return err
 	}
 
 	kv := e.kvStore.DB()
@@ -138,4 +135,83 @@ func (e *EventsByID) Rebuild(ctx context.Context, jr journalreader.Reader) error
 	}
 
 	return nil
+}
+
+func (e *EventsByID) Get(ctx context.Context, id uuid.UUID) (*journal.Event, error) {
+	if err := checkContext(ctx, "context cancellation"); err != nil {
+		return nil, err
+	}
+
+	serializedID, err := id.MarshalBinary()
+	if err != nil {
+		return nil, fmt.Errorf("serialization: %w", err)
+	}
+
+	key := make([]byte, 0, len(serializedID))
+	key = append(key, serializedID...)
+
+	kv := e.kvStore.DB()
+
+	var event *journal.Event
+	err = kv.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(bucketNameEventsByID))
+		if b == nil {
+			return nil
+		}
+
+		serializedEvent := b.Get(key)
+		if serializedEvent == nil {
+			return nil
+		}
+
+		var decoded journal.Event
+		err = json.Unmarshal(serializedEvent, &decoded)
+		if err != nil {
+			return fmt.Errorf("deserialization: %w", err)
+		}
+
+		event = &decoded
+
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("kv view: %w", err)
+	}
+
+	return event, nil
+}
+
+func (e *EventsByID) List(ctx context.Context) ([]journal.Event, error) {
+	if err := checkContext(ctx, "context cancellation"); err != nil {
+		return nil, err
+	}
+
+	kv := e.kvStore.DB()
+
+	events := []journal.Event{}
+	err := kv.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(bucketNameEventsByID))
+		if b == nil {
+			return nil
+		}
+
+		c := b.Cursor()
+
+		for _, v := c.First(); v != nil; _, v = c.Next() {
+			var event journal.Event
+			err := json.Unmarshal(v, &event)
+			if err != nil {
+				return fmt.Errorf("deserialization: %w", err)
+			}
+
+			events = append(events, event)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("kv view: %w", err)
+	}
+
+	return events, nil
 }

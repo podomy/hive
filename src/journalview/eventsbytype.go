@@ -61,10 +61,8 @@ func (e *EventsByType) putEvent(b *bolt.Bucket, event journal.Event) error {
 
 //nolint:dupl // Projection methods intentionally keep bucket-specific logic local.
 func (e *EventsByType) Apply(ctx context.Context, event journal.Event) error {
-	select {
-	case <-ctx.Done():
-		return fmt.Errorf("context cancelled: %w", ctx.Err())
-	default:
+	if err := checkContext(ctx, "context cancelled"); err != nil {
+		return err
 	}
 
 	kv := e.kv.DB()
@@ -115,10 +113,8 @@ func (e *EventsByType) replayEvents(ctx context.Context, jr journalreader.Reader
 
 //nolint:dupl // Projection methods intentionally keep rebuild flow local to each view.
 func (e *EventsByType) Rebuild(ctx context.Context, jr journalreader.Reader) error {
-	select {
-	case <-ctx.Done():
-		return fmt.Errorf("context cancelled: %w", ctx.Err())
-	default:
+	if err := checkContext(ctx, "context cancelled"); err != nil {
+		return err
 	}
 
 	kv := e.kv.DB()
@@ -139,10 +135,8 @@ func (e *EventsByType) Rebuild(ctx context.Context, jr journalreader.Reader) err
 }
 
 func (e *EventsByType) Get(ctx context.Context, eventType string, id uuid.UUID) (*journal.Event, error) {
-	select {
-	case <-ctx.Done():
-		return nil, fmt.Errorf("context cancellation: %w", ctx.Err())
-	default:
+	if err := checkContext(ctx, "context cancellation"); err != nil {
+		return nil, err
 	}
 
 	serializedType := []byte(eventType)
@@ -189,11 +183,10 @@ func (e *EventsByType) Get(ctx context.Context, eventType string, id uuid.UUID) 
 	return event, nil
 }
 
+//nolint:dupl // Projection list methods intentionally keep bucket-specific cursor logic local.
 func (e *EventsByType) List(ctx context.Context, eventType string) ([]journal.Event, error) {
-	select {
-	case <-ctx.Done():
-		return nil, fmt.Errorf("context cancellation: %w", ctx.Err())
-	default:
+	if err := checkContext(ctx, "context cancellation"); err != nil {
+		return nil, err
 	}
 
 	serializedType := []byte(eventType)

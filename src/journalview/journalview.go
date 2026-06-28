@@ -5,10 +5,19 @@ package journalview
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/podomy/hive/src/journal"
 	"github.com/podomy/hive/src/journalreader"
 )
+
+func checkContext(ctx context.Context, message string) error {
+	if err := ctx.Err(); err != nil {
+		return fmt.Errorf("%s: %w", message, err)
+	}
+
+	return nil
+}
 
 // View represents a read-optimised projection of journal events.
 // Views are kept in sync by applying events as they are appended to the journal.
