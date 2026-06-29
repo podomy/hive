@@ -36,6 +36,17 @@ func openDB() (*bolt.DB, error) {
 	return db, nil
 }
 
+// OpenDBPath opens a bbolt database at the provided path.
+// The caller is responsible for closing the returned store.
+func OpenDBPath(path string) (*KVStore, error) {
+	db, err := bolt.Open(path, 0o600, nil)
+	if err != nil {
+		return nil, fmt.Errorf("open state database: %w", err)
+	}
+
+	return &KVStore{db: db}, nil
+}
+
 // Open opens the bbolt database at the auto-determined path.
 // The caller is responsible for calling Close when done.
 func Open() (*KVStore, error) {
